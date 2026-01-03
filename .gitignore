@@ -17,8 +17,13 @@ db.sqlite3
 db.sqlite3-journal
 /media
 /staticfiles
+
+# Environment Variables - NEVER COMMIT THESE!
 .env
 .env.local
+.env.production
+.env.*.local
+*.env
 
 # IDEs
 .vscode/
