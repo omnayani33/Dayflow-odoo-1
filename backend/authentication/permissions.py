@@ -20,3 +20,10 @@ class IsAdminOrEmployee(BasePermission):
     
     def has_permission(self, request, view):
         return request.user and request.user.is_authenticated and request.user.role in ['ADMIN', 'EMPLOYEE']
+
+
+class IsAdminOrHR(BasePermission):
+    """Permission class to check if user is either ADMIN or HR role"""
+    
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated and request.user.role in ['ADMIN', 'HR']

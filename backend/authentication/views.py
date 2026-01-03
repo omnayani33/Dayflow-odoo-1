@@ -74,9 +74,13 @@ class EmployeeCreateView(APIView):
             user = result['user']
             temp_password = result['temp_password']
             
+            # Send welcome email
+            from .notifications import EmailNotificationService
+            EmailNotificationService.send_welcome_email(user, temp_password)
+            
             return Response(
                 {
-                    'message': 'Employee created successfully',
+                    'message': 'Employee created successfully. Welcome email sent.',
                     'employee': {
                         'employee_id': user.employee_id,
                         'email': user.email,
@@ -148,9 +152,13 @@ class ChangePasswordView(APIView):
             user.is_first_login = False
             user.save()
             
+            # Send password changed email
+            from .notifications import EmailNotificationService
+            EmailNotificationService.send_password_changed_email(user)
+            
             return Response(
                 {
-                    'message': 'Password changed successfully',
+                    'message': 'Password changed successfully. Confirmation email sent.',
                     'note': 'Please login again with your new password'
                 },
                 status=status.HTTP_200_OK

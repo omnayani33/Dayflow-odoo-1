@@ -336,3 +336,39 @@ class LeaveAllocation(models.Model):
     @property
     def sick_leave_available(self):
         return self.sick_leave_total - self.sick_leave_used
+
+
+class Notification(models.Model):
+    """In-app notification system"""
+    TYPE_CHOICES = [
+        ('INFO', 'Information'),
+        ('SUCCESS', 'Success'),
+        ('WARNING', 'Warning'),
+        ('ERROR', 'Error'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='INFO')
+    is_read = models.BooleanField(default=False)
+    related_object_type = models.CharField(max_length=50, blank=True, null=True)  # 'leave', 'attendance', etc.
+    related_object_id = models.IntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(blank=True, null=True)
+    
+    class Meta:
+        db_table = 'notifications'
+        verbose_name = 'Notification'
+        verbose_name_plural = 'Notifications'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.title}"
+    
+    def mark_as_read(self):
+        """Mark notification as read"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = datetime.now()
+            self.save()

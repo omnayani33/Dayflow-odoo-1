@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import EmployeeProfile, Attendance, TimeOff, LeaveAllocation
+from .models import EmployeeProfile, Attendance, TimeOff, LeaveAllocation, Notification
 
 User = get_user_model()
 
@@ -139,3 +139,43 @@ class LeaveAllocationSerializer(serializers.ModelSerializer):
         model = LeaveAllocation
         fields = '__all__'
         read_only_fields = ['user', 'created_at', 'updated_at']
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer for in-app notifications"""
+    time_ago = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Notification
+        fields = ['id', 'title', 'message', 'notification_type', 'is_read', 
+                  'related_object_type', 'related_object_id', 'created_at', 
+                  'read_at', 'time_ago']
+        read_only_fields = ['id', 'created_at', 'read_at', 'time_ago']
+    
+    def get_time_ago(self, obj):
+        """Get human-readable time ago"""
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        created_at = obj.created_at
+        
+        if created_at.tzinfo is None:
+            import pytz
+            created_at = pytz.utc.localize(created_at)
+        
+        diff = now - created_at
+        seconds = diff.total_seconds()
+        
+        if seconds < 60:
+            return "Just now"
+        elif seconds < 3600:
+            minutes = int(seconds / 60)
+            return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+        elif seconds < 86400:
+            hours = int(seconds / 3600)
+            return f"{hours} hour{'s' if hours != 1 else ''} ago"
+        elif seconds < 604800:
+            days = int(seconds / 86400)
+            return f"{days} day{'s' if days != 1 else ''} ago"
+        else:
+            weeks = int(seconds / 604800)
+            return f"{weeks} week{'s' if weeks != 1 else ''} ago"

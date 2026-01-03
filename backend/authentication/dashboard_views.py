@@ -11,7 +11,8 @@ from .profile_serializers import (
     EmployeeProfilePublicSerializer,
     AttendanceSerializer,
     TimeOffSerializer,
-    LeaveAllocationSerializer
+    LeaveAllocationSerializer,
+    NotificationSerializer
 )
 from .permissions import IsAdmin
 
@@ -359,9 +360,24 @@ class TimeOffRequestView(APIView):
     def post(self, request):
         serializer = TimeOffSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            time_off = serializer.save(user=request.user)
+            
+            # Send notifications
+            from .notifications import (
+                EmailNotificationService,
+                WhatsAppNotificationService,
+                InAppNotificationService
+            )
+            
+            # In-app notification for employee
+            InAppNotificationService.notify_leave_request_submitted(time_off)
+            
+            # Notify admins/HR about new leave request
+            InAppNotificationService.notify_admin_new_leave_request(time_off)
+            EmailNotificationService.send_leave_request_to_admin(time_off)
+            
             return Response({
-                'message': 'Time-off request submitted successfully',
+                'message': 'Time-off request submitted successfully. Admin has been notified.',
                 'request': serializer.data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -406,8 +422,25 @@ class TimeOffManagementView(APIView):
             leave_allocation.save()
             time_off.save()
             
+            # Send notifications (Email + WhatsApp + In-app)
+            from .notifications import (
+                EmailNotificationService,
+                WhatsAppNotificationService,
+                InAppNotificationService
+            )
+            
+            # In-app notification
+            InAppNotificationService.notify_leave_approved(time_off)
+            
+            # Email notification
+            EmailNotificationService.send_leave_approval_email(time_off)
+            
+            # WhatsApp notification
+            whatsapp_service = WhatsAppNotificationService()
+            whatsapp_service.send_leave_approval_whatsapp(time_off)
+            
             return Response({
-                'message': 'Time-off request approved',
+                'message': 'Time-off request approved. Employee has been notified via email, WhatsApp, and in-app.',
                 'request': TimeOffSerializer(time_off).data
             })
         
@@ -416,8 +449,25 @@ class TimeOffManagementView(APIView):
             time_off.rejection_reason = request.data.get('reason', '')
             time_off.save()
             
+            # Send notifications
+            from .notifications import (
+                EmailNotificationService,
+                WhatsAppNotificationService,
+                InAppNotificationService
+            )
+            
+            # In-app notification
+            InAppNotificationService.notify_leave_rejected(time_off)
+            
+            # Email notification
+            EmailNotificationService.send_leave_rejection_email(time_off)
+            
+            # WhatsApp notification
+            whatsapp_service = WhatsAppNotificationService()
+            whatsapp_service.send_leave_rejection_whatsapp(time_off)
+            
             return Response({
-                'message': 'Time-off request rejected',
+                'message': 'Time-off request rejected. Employee has been notified via email, WhatsApp, and in-app.',
                 'request': TimeOffSerializer(time_off).data
             })
         

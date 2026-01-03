@@ -25,6 +25,25 @@ from .reports_views import (
     LeaveReportView,
     LeaveReportCSVView
 )
+from .notification_views import (
+    MyNotificationsView,
+    MarkNotificationReadView,
+    MarkAllNotificationsReadView,
+    DeleteNotificationView,
+    ClearAllNotificationsView
+)
+from .analytics_views import (
+    AnalyticsDashboardView,
+    AttendanceTrendAnalyticsView,
+    LeaveAnalyticsView,
+    PayrollAnalyticsView
+)
+from .advanced_analytics_views import (
+    PredictiveAnalyticsView,
+    AnomalyDetectionView,
+    PerformanceScoreView,
+    GraphDataView
+)
 
 urlpatterns = [
     # Company registration (creates first admin account)
@@ -71,4 +90,23 @@ urlpatterns = [
     path('reports/payroll/csv', PayrollReportCSVView.as_view(), name='payroll-report-csv'),
     path('reports/leave', LeaveReportView.as_view(), name='leave-report'),
     path('reports/leave/csv', LeaveReportCSVView.as_view(), name='leave-report-csv'),
+    
+    # In-App Notifications (NEW)
+    path('notifications', MyNotificationsView.as_view(), name='my-notifications'),
+    path('notifications/<int:pk>/read', MarkNotificationReadView.as_view(), name='mark-notification-read'),
+    path('notifications/read-all', MarkAllNotificationsReadView.as_view(), name='mark-all-read'),
+    path('notifications/<int:pk>/delete', DeleteNotificationView.as_view(), name='delete-notification'),
+    path('notifications/clear', ClearAllNotificationsView.as_view(), name='clear-notifications'),
+    
+    # Analytics Dashboards (NEW)
+    path('analytics/dashboard', AnalyticsDashboardView.as_view(), name='analytics-dashboard'),
+    path('analytics/attendance-trend', AttendanceTrendAnalyticsView.as_view(), name='attendance-trend'),
+    path('analytics/leave', LeaveAnalyticsView.as_view(), name='leave-analytics'),
+    path('analytics/payroll', PayrollAnalyticsView.as_view(), name='payroll-analytics'),
+    
+    # Advanced Analytics - Unique Features for Hackathon (NEW)
+    path('analytics/predictive', PredictiveAnalyticsView.as_view(), name='predictive-analytics'),
+    path('analytics/anomalies', AnomalyDetectionView.as_view(), name='anomaly-detection'),
+    path('analytics/performance-scores', PerformanceScoreView.as_view(), name='performance-scores'),
+    path('analytics/graph-data', GraphDataView.as_view(), name='graph-data'),
 ]
