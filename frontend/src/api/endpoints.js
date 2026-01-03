@@ -4,19 +4,16 @@ import api from './axios'
 export const authAPI = {
   // Company signup (first-time setup - creates company and admin)
   companySignup: (data) => api.post('/auth/company/signup', data),
-  
+
   // Login with employee_id or email
-  login: (credentials) => api.post('/auth/login', {
-    login_id: credentials.email || credentials.employee_id,
-    password: credentials.password,
-  }),
-  
+  login: (credentials) => api.post('/auth/login', credentials),
+
   // Create employee (Admin/HR only)
   createEmployee: (data) => api.post('/auth/employee/create', data),
-  
+
   // Change password
   changePassword: (data) => api.post('/auth/change-password', data),
-  
+
   // Get current user
   getCurrentUser: () => api.get('/auth/me'),
 }
@@ -25,7 +22,7 @@ export const authAPI = {
 export const profileAPI = {
   // Get my profile
   getMyProfile: () => api.get('/auth/profile/me'),
-  
+
   // Update profile
   updateProfile: (data) => api.put('/auth/profile/update', data),
 }
@@ -34,16 +31,19 @@ export const profileAPI = {
 export const dashboardAPI = {
   // Employee dashboard
   getEmployeeDashboard: () => api.get('/auth/dashboard/employee'),
-  
+
   // Admin dashboard
   getAdminDashboard: () => api.get('/auth/dashboard/admin'),
 }
 
 // Attendance APIs
 export const attendanceAPI = {
-  // Check in/out
-  checkInOut: (action) => api.post('/auth/attendance/check', { action }),
-  
+  // Check in
+  checkIn: () => api.post('/auth/attendance/check', { action: 'check_in' }),
+
+  // Check out
+  checkOut: () => api.post('/auth/attendance/check', { action: 'check_out' }),
+
   // Get my attendance records
   getMyAttendance: (month, year) => api.get(`/auth/attendance/my?month=${month}&year=${year}`),
 }
@@ -52,15 +52,15 @@ export const attendanceAPI = {
 export const leaveAPI = {
   // Get my leave requests
   getMyRequests: () => api.get('/auth/timeoff/request'),
-  
+
   // Submit leave request
   submitRequest: (data) => api.post('/auth/timeoff/request', data),
-  
-  // Get all requests (Admin/HR only)
-  getAllRequests: (status) => api.get(`/auth/timeoff/manage${status ? `?status=${status}` : ''}`),
-  
+
+  // Get all requests (Admin/HR only) - for manage page
+  manageTimeOff: (status) => api.get(`/auth/timeoff/manage${status ? `?status=${status}` : ''}`),
+
   // Approve/Reject request (Admin/HR only)
-  manageRequest: (id, action, reason) => api.patch(`/auth/timeoff/manage/${id}`, {
+  approveReject: (id, action, reason) => api.patch(`/auth/timeoff/manage/${id}`, {
     action,
     ...(reason && { reason })
   }),
@@ -70,7 +70,7 @@ export const leaveAPI = {
 export const payrollAPI = {
   // Get my salary (included in profile)
   getMySalary: () => api.get('/auth/profile/me'),
-  
+
   // Update salary (Admin only, via profile update)
   updateSalary: (data) => api.put('/auth/profile/update', data),
 }
