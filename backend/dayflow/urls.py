@@ -15,8 +15,45 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def api_root(request):
+    """API root endpoint showing available endpoints"""
+    return Response({
+        'message': 'Welcome to Dayflow HRMS API',
+        'version': '2.0',
+        'endpoints': {
+            'authentication': {
+                'company_signup': '/api/auth/company/signup',
+                'employee_create': '/api/auth/employee/create (Admin/HR only)',
+                'login': '/api/auth/login',
+                'change_password': '/api/auth/change-password',
+                'current_user': '/api/auth/me',
+            },
+            'admin': '/admin/',
+        },
+        'notes': {
+            'employee_id_format': 'OI[CompanyCode][NameCode][Year][SerialNum]',
+            'example': 'OIJODO20220001',
+            'login': 'Use employee_id or email to login'
+        }
+    })
+
 
 urlpatterns = [
+    path("", api_root, name='api-root'),
     path("admin/", admin.site.urls),
+    path("api/auth/", include('authentication.urls')),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
