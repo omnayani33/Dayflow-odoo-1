@@ -1,41 +1,16 @@
-# Python
+﻿# Python
 *.pyc
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Django
-*.log
+*.sqlite3
 db.sqlite3
-db.sqlite3-journal
-/media
-/staticfiles
+.venv/
+venv/
 
-# Environment Variables - NEVER COMMIT THESE!
-.env
-.env.local
-.env.production
-.env.*.local
-*.env
+# Node
+node_modules/
+package-lock.json
+.vite/
 
-# IDEs
+# IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Test files (optional - remove if you want to commit)
-create_superuser.py
-test_auth.py
