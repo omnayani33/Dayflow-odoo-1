@@ -291,6 +291,51 @@ class MyAttendanceView(APIView):
         })
 
 
+class AllAttendanceView(APIView):
+    """Admin view to see all employees attendance"""
+    permission_classes = [IsAuthenticated, IsAdmin]
+    
+    def get(self, request):
+        month = request.query_params.get('month', date.today().month)
+        year = request.query_params.get('year', date.today().year)
+        status = request.query_params.get('status')  # Optional filter
+        employee_id = request.query_params.get('employee_id')  # Optional filter
+        
+        # Base query
+        attendance_records = Attendance.objects.filter(
+            date__month=month,
+            date__year=year
+        ).select_related('user').order_by('-date', 'user__employee_id')
+        
+        # Apply optional filters
+        if status:
+            attendance_records = attendance_records.filter(status=status)
+        if employee_id:
+            attendance_records = attendance_records.filter(user__employee_id=employee_id)
+        
+        serializer = AttendanceSerializer(attendance_records, many=True)
+        
+        # Calculate summary statistics
+        total_records = attendance_records.count()
+        present_count = attendance_records.filter(status='PRESENT').count()
+        absent_count = attendance_records.filter(status='ABSENT').count()
+        half_day_count = attendance_records.filter(status='HALF_DAY').count()
+        leave_count = attendance_records.filter(status='LEAVE').count()
+        
+        return Response({
+            'month': int(month),
+            'year': int(year),
+            'summary': {
+                'total': total_records,
+                'present': present_count,
+                'absent': absent_count,
+                'half_day': half_day_count,
+                'on_leave': leave_count
+            },
+            'records': serializer.data
+        })
+
+
 class TimeOffRequestView(APIView):
     """Create and view time-off requests"""
     permission_classes = [IsAuthenticated]

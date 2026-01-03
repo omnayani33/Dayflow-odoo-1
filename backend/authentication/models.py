@@ -219,8 +219,7 @@ class Attendance(models.Model):
     """Daily attendance tracking"""
     STATUS_CHOICES = [
         ('PRESENT', 'Present'),
-        ('ABSENT', 'Absent'),
-        ('LEAVE', 'On Leave'),
+        ('ABSENT', 'Absent'),        ('HALF_DAY', 'Half Day'),        ('LEAVE', 'On Leave'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='attendance_records')
