@@ -24,7 +24,7 @@ services:
         value: "True" # Simplified for initial deployment
 
   # Frontend: Static Site
-  - type: static
+  - type: web
     name: dayflow-frontend
     env: static
     buildCommand: |
