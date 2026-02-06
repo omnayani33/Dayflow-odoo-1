@@ -80,3 +80,10 @@ export const payrollAPI = {
   // Update salary (Admin only, via profile update)
   updateSalary: (data) => api.put('/auth/profile/update', data),
 }
+
+// Reports APIs
+export const reportsAPI = {
+  getAttendanceReport: (month, year) => api.get(`/auth/reports/attendance?month=${month}&year=${year}`),
+  getLeaveReport: (year) => api.get(`/auth/reports/leave?year=${year}`),
+  getPayrollReport: (month, year) => api.get(`/auth/reports/payroll?month=${month}&year=${year}`),
+}

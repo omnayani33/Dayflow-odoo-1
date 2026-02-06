@@ -35,6 +35,7 @@ function Sidebar({ isOpen, onClose }) {
       section: 'Admin',
       items: [
         { path: '/approvals', icon: 'bi-check2-square', label: 'Approvals' },
+        { path: '/reports', icon: 'bi-graph-up', label: 'Reports' },
         { path: '/create-employee', icon: 'bi-person-plus', label: 'Add Employee' },
       ]
     }

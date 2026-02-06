@@ -16,6 +16,7 @@ import Attendance from './pages/Attendance'
 import Leave from './pages/Leave'
 import Approvals from './pages/Approvals'
 import Payroll from './pages/Payroll'
+import Reports from './pages/Reports'
 import CreateEmployee from './pages/CreateEmployee'
 
 // Route Guards
@@ -105,6 +106,11 @@ function App() {
         <Route path="approvals" element={
           <AdminRoute>
             <Approvals />
+          </AdminRoute>
+        } />
+        <Route path="reports" element={
+          <AdminRoute>
+            <Reports />
           </AdminRoute>
         } />
         <Route path="create-employee" element={

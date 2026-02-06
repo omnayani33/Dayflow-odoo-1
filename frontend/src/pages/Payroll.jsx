@@ -17,34 +17,48 @@ function Payroll() {
   const fetchPayroll = async () => {
     try {
       setLoading(true)
-      // Mock data since backend may not have full payroll implemented
+      const response = await payrollAPI.getMySalary()
+      const profile = response.data
+
+      // Calculate derived values if not present
+      const basic = parseFloat(profile.basic_salary) || 0
+      const hra = parseFloat(profile.house_rent_allowance) || 0
+      const other = parseFloat(profile.other_allowance) || 0
+      const gross = basic + hra + other // Simplistic calculation if not provided
+
+      // Mocking deductions for display as backend might not have full tax engine yet
+      // In a real app, this would come from a dedicated /payslip endpoint
+      const pf = basic * 0.12
+      const tax = gross > 50000 ? gross * 0.1 : 0
+      const totalDeductions = pf + tax
+
       setPayrollData({
         employee_name: userInfo?.full_name,
         employee_id: userInfo?.employee_id,
-        department: 'Engineering',
-        designation: 'Software Developer',
-        month: 'January',
-        year: 2026,
+        department: profile.department || 'N/A',
+        designation: profile.designation || 'N/A',
+        month: new Date().toLocaleString('default', { month: 'long' }),
+        year: new Date().getFullYear(),
         earnings: {
-          basic_salary: 25000,
-          hra: 12500,
-          standard_allowance: 8335,
-          performance_bonus: 4165,
-          lta: 4165,
-          fixed_allowance: 5835,
-          gross_salary: 50000
+          basic_salary: basic,
+          hra: hra,
+          standard_allowance: 0, // Not in profile?
+          performance_bonus: 0,
+          lta: 0,
+          fixed_allowance: other,
+          gross_salary: gross
         },
         deductions: {
           professional_tax: 200,
-          pf_employee: 3000,
-          income_tax: 2500,
-          total_deductions: 5700
+          pf_employee: pf,
+          income_tax: tax,
+          total_deductions: totalDeductions + 200
         },
-        net_salary: 44300
+        net_salary: gross - (totalDeductions + 200)
       })
     } catch (err) {
       console.error('Payroll error:', err)
-      setError('Failed to load payroll data')
+      setError('Failed to load payroll data. Please contact HR if this persists.')
     } finally {
       setLoading(false)
     }
