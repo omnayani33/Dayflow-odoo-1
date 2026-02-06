@@ -15,7 +15,8 @@ from .dashboard_views import (
     MyAttendanceView,
     AllAttendanceView,
     TimeOffRequestView,
-    TimeOffManagementView
+    TimeOffManagementView,
+    EmployeeListView
 )
 from .reports_views import (
     AttendanceReportView,
@@ -51,6 +52,7 @@ urlpatterns = [
     
     # Employee management (admin/HR only)
     path('employee/create', EmployeeCreateView.as_view(), name='employee-create'),
+    path('employee/all', EmployeeListView.as_view(), name='employee-list'),
     
     # Authentication
     path('login', LoginView.as_view(), name='login'),

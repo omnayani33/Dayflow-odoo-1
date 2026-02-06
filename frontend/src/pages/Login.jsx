@@ -26,7 +26,7 @@ function Login() {
 
     try {
       const response = await authAPI.login({
-        login_id: formData.email,
+        email: formData.email,
         password: formData.password,
       })
 
@@ -36,11 +36,10 @@ function Login() {
       authUtils.setAuth(data)
 
       // Redirect based on first login status
-      // After login → redirect to Employee List page (per wireframe)
       if (data.is_first_login) {
         navigate('/change-password', { replace: true })
       } else {
-        navigate('/employees', { replace: true })
+        navigate('/dashboard', { replace: true })
       }
     } catch (err) {
       console.error('Login error:', err)

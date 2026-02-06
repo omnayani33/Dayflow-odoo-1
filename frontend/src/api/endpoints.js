@@ -6,10 +6,16 @@ export const authAPI = {
   companySignup: (data) => api.post('/auth/company/signup', data),
 
   // Login with employee_id or email
-  login: (credentials) => api.post('/auth/login', credentials),
+  login: (credentials) => api.post('/auth/login', {
+    login_id: credentials.email || credentials.employee_id,
+    password: credentials.password,
+  }),
 
   // Create employee (Admin/HR only)
   createEmployee: (data) => api.post('/auth/employee/create', data),
+
+  // Get all employees (Admin/HR only)
+  getEmployees: () => api.get('/auth/employee/all'),
 
   // Change password
   changePassword: (data) => api.post('/auth/change-password', data),

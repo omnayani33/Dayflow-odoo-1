@@ -475,3 +475,24 @@ class TimeOffManagementView(APIView):
             {'error': 'Invalid action. Use "approve" or "reject"'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class EmployeeListView(APIView):
+    """List all employees in the company (Admin only)"""
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        employees = User.objects.filter(company=request.user.company).order_by('employee_id')
+        data = []
+        for emp in employees:
+            data.append({
+                'employee_id': emp.employee_id,
+                'full_name': emp.get_full_name(),
+                'email': emp.email,
+                'role': emp.role,
+                'department': emp.profile.department if hasattr(emp, 'profile') else 'N/A',
+                'job_title': emp.profile.job_title if hasattr(emp, 'profile') else 'N/A',
+                'phone': emp.phone,
+                'is_active': emp.is_active
+            })
+        return Response(data)

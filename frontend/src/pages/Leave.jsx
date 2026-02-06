@@ -1,581 +1,227 @@
 import { useState, useEffect } from 'react'
 import { leaveAPI } from '../api/endpoints'
-import { authUtils } from '../utils/authUtils'
 
 function Leave() {
-  const [requests, setRequests] = useState([])
-  const [balance, setBalance] = useState({ paid: 24, sick: 7 })
-  const [loading, setLoading] = useState(true)
-  const [showNewModal, setShowNewModal] = useState(false)
-  const [actionLoading, setActionLoading] = useState(null)
-  const [message, setMessage] = useState({ type: '', text: '' })
-  const [activeTab, setActiveTab] = useState('timeoff')
-  const [searchTerm, setSearchTerm] = useState('')
+    const [requests, setRequests] = useState([])
+    const [allocation, setAllocation] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [submitting, setSubmitting] = useState(false)
+    const [message, setMessage] = useState({ type: '', text: '' })
+    const [showForm, setShowForm] = useState(false)
 
-  const [formData, setFormData] = useState({
-    time_off_type: 'Paid',
-    start_date: '',
-    end_date: '',
-    reason: ''
-  })
+    const [formData, setFormData] = useState({
+        time_off_type: 'PAID',
+        start_date: '',
+        end_date: '',
+        reason: ''
+    })
 
-  const isAdmin = authUtils.isAdmin()
+    useEffect(() => {
+        fetchLeaveData()
+    }, [])
 
-  useEffect(() => {
-    fetchRequests()
-  }, [])
-
-  const fetchRequests = async () => {
-    try {
-      setLoading(true)
-      if (isAdmin) {
-        const response = await leaveAPI.manageTimeOff()
-        setRequests(response.data || [])
-      } else {
-        const response = await leaveAPI.getMyRequests()
-        setRequests(response.data || [])
-      }
-    } catch (err) {
-      console.error('Fetch requests error:', err)
-      // Mock data for demo
-      setRequests([
-        { id: 1, employee_name: '[Emp Name]', start_date: '2025-10-28', end_date: '2025-10-28', time_off_type: 'Paid time Off', status: 'PENDING' },
-      ])
-    } finally {
-      setLoading(false)
+    const fetchLeaveData = async () => {
+        try {
+            setLoading(true)
+            const response = await leaveAPI.getMyRequests()
+            setRequests(response.data.time_off_requests || [])
+            setAllocation(response.data.allocation || null)
+        } catch (err) {
+            console.error('Fetch leave error:', err)
+            setMessage({ type: 'danger', text: 'Failed to load leave data' })
+        } finally {
+            setLoading(false)
+        }
     }
-  }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    try {
-      setActionLoading('submit')
-      await leaveAPI.submitRequest(formData)
-      setMessage({ type: 'success', text: 'Request submitted successfully!' })
-      setShowNewModal(false)
-      setFormData({ time_off_type: 'Paid', start_date: '', end_date: '', reason: '' })
-      fetchRequests()
-    } catch (err) {
-      setMessage({ type: 'danger', text: 'Failed to submit request' })
-    } finally {
-      setActionLoading(null)
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        if (!formData.start_date || !formData.end_date || !formData.reason) {
+            setMessage({ type: 'danger', text: 'Please fill in all required fields' })
+            return
+        }
+        try {
+            setSubmitting(true)
+            await leaveAPI.submitRequest(formData)
+            setMessage({ type: 'success', text: 'Leave request submitted successfully!' })
+            setShowForm(false)
+            setFormData({ time_off_type: 'PAID', start_date: '', end_date: '', reason: '' })
+            fetchLeaveData()
+        } catch (err) {
+            setMessage({ type: 'danger', text: err.response?.data?.message || 'Failed to submit request' })
+        } finally {
+            setSubmitting(false)
+        }
     }
-  }
 
-  const handleApprove = async (id) => {
-    try {
-      setActionLoading(id)
-      await leaveAPI.approveReject(id, 'approve')
-      setMessage({ type: 'success', text: 'Request approved!' })
-      fetchRequests()
-    } catch (err) {
-      setMessage({ type: 'danger', text: 'Failed to approve' })
-    } finally {
-      setActionLoading(null)
+    const getStatusBadge = (status) => {
+        const statusMap = {
+            'PENDING': { class: 'status-badge-warning', icon: 'bi-hourglass-split' },
+            'APPROVED': { class: 'status-badge-success', icon: 'bi-check-circle' },
+            'REJECTED': { class: 'status-badge-danger', icon: 'bi-x-circle' },
+        }
+        const config = statusMap[status] || { class: 'status-badge-info', icon: 'bi-question-circle' }
+        return <span className={`status-badge ${config.class}`}><i className={`bi ${config.icon} me-1`}></i>{status}</span>
     }
-  }
 
-  const handleReject = async (id) => {
-    try {
-      setActionLoading(id)
-      await leaveAPI.approveReject(id, 'reject')
-      setMessage({ type: 'success', text: 'Request rejected!' })
-      fetchRequests()
-    } catch (err) {
-      setMessage({ type: 'danger', text: 'Failed to reject' })
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  }
-
-  const filteredRequests = requests.filter(req =>
-    req.employee_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  return (
-    <div className="leave-page">
-      {/* Tabs: Time Off / Allocation */}
-      <div className="page-tabs">
-        <button
-          className={`page-tab ${activeTab === 'timeoff' ? 'active' : ''}`}
-          onClick={() => setActiveTab('timeoff')}
-        >
-          Time Off
-        </button>
-        <button
-          className={`page-tab ${activeTab === 'allocation' ? 'active' : ''}`}
-          onClick={() => setActiveTab('allocation')}
-        >
-          Allocation
-        </button>
-      </div>
-
-      {/* Header Row: NEW button + Search */}
-      <div className="header-row">
-        <button className="btn-new" onClick={() => setShowNewModal(true)}>
-          NEW
-        </button>
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="Searchbar"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* Alert Messages */}
-      {message.text && (
-        <div className={`alert-box alert-${message.type}`}>
-          {message.text}
-          <button onClick={() => setMessage({ type: '', text: '' })}>×</button>
-        </div>
-      )}
-
-      {/* Leave Balance Cards */}
-      <div className="balance-cards">
-        <div className="balance-card">
-          <span className="balance-type paid">Paid time Off</span>
-          <span className="balance-value">{balance.paid} Days Available</span>
-        </div>
-        <div className="balance-card">
-          <span className="balance-type sick">Sick time off</span>
-          <span className="balance-value">{balance.sick} Days Available</span>
-        </div>
-      </div>
-
-      {/* Requests Table */}
-      <div className="requests-table-wrapper">
-        {loading ? (
-          <div className="loading">Loading...</div>
-        ) : (
-          <table className="requests-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Time off Type</th>
-                <th>Status</th>
-                {isAdmin && <th></th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRequests.length === 0 ? (
-                <tr>
-                  <td colSpan={isAdmin ? 6 : 5} className="no-data">No requests found</td>
-                </tr>
-              ) : (
-                filteredRequests.map((request) => (
-                  <tr key={request.id}>
-                    <td>{request.employee_name || 'Me'}</td>
-                    <td>{formatDate(request.start_date)}</td>
-                    <td>{formatDate(request.end_date)}</td>
-                    <td className="type-cell">{request.time_off_type}</td>
-                    <td>
-                      {request.status === 'PENDING' && isAdmin ? (
-                        <div className="action-buttons">
-                          <button
-                            className="btn-reject"
-                            onClick={() => handleReject(request.id)}
-                            disabled={actionLoading === request.id}
-                          ></button>
-                          <button
-                            className="btn-approve"
-                            onClick={() => handleApprove(request.id)}
-                            disabled={actionLoading === request.id}
-                          ></button>
-                        </div>
-                      ) : (
-                        <span className={`status-badge status-${request.status?.toLowerCase()}`}>
-                          {request.status}
-                        </span>
-                      )}
-                    </td>
-                    {isAdmin && (
-                      <td></td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* New Request Modal */}
-      {showNewModal && (
-        <div className="modal-overlay" onClick={() => setShowNewModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>New Time Off Request</h3>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Time Off Type</label>
-                <select
-                  value={formData.time_off_type}
-                  onChange={(e) => setFormData({ ...formData, time_off_type: e.target.value })}
-                  required
-                >
-                  <option value="Paid">Paid Time Off</option>
-                  <option value="Sick">Sick Leave</option>
-                  <option value="Unpaid">Unpaid Leave</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Start Date</label>
-                <input
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>End Date</label>
-                <input
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Reason</label>
-                <textarea
-                  value={formData.reason}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  rows="3"
-                ></textarea>
-              </div>
-              <div className="form-actions">
-                <button type="button" onClick={() => setShowNewModal(false)}>Cancel</button>
-                <button type="submit" className="btn-submit" disabled={actionLoading === 'submit'}>
-                  {actionLoading === 'submit' ? 'Submitting...' : 'Submit'}
+    return (
+        <div className="leave-page">
+            <div className="page-header mb-4">
+                <div>
+                    <h1 className="page-title">Leave Management</h1>
+                    <p className="page-subtitle">Apply for time off and track your leave requests</p>
+                </div>
+                <button className="glass-btn glass-btn-primary" onClick={() => setShowForm(!showForm)}>
+                    <i className={`bi ${showForm ? 'bi-x' : 'bi-plus-lg'} me-2`}></i>
+                    {showForm ? 'Cancel' : 'New Request'}
                 </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
 
-      <style jsx>{`
-        .leave-page {
-          color: white;
-        }
+            {message.text && (
+                <div className={`alert-glass alert-${message.type} mb-4`}>
+                    <i className={`bi ${message.type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle'} me-2`}></i>
+                    {message.text}
+                    <button className="alert-close" onClick={() => setMessage({ type: '', text: '' })}><i className="bi bi-x"></i></button>
+                </div>
+            )}
 
-        .page-tabs {
-          display: flex;
-          gap: 0.25rem;
-          margin-bottom: 1rem;
-        }
+            {/* Leave Balance Cards */}
+            {allocation && (
+                <div className="row g-4 mb-4">
+                    <div className="col-md-4">
+                        <div className="glass-card stat-card glass-card-success">
+                            <div className="stat-card-icon bg-success-glow"><i className="bi bi-calendar-check"></i></div>
+                            <div className="stat-card-value">{allocation.paid_leave_available}</div>
+                            <div className="stat-card-label">Paid Leave Available</div>
+                            <div className="progress-custom">
+                                <div className="progress-bar progress-bar-success" style={{ width: `${(allocation.paid_leave_available / allocation.paid_leave_total) * 100}%` }}></div>
+                            </div>
+                            <small style={{ color: '#94a3b8', marginTop: '0.5rem', display: 'block' }}>of {allocation.paid_leave_total} days</small>
+                        </div>
+                    </div>
+                    <div className="col-md-4">
+                        <div className="glass-card stat-card glass-card-warning">
+                            <div className="stat-card-icon bg-warning-glow"><i className="bi bi-bandaid"></i></div>
+                            <div className="stat-card-value">{allocation.sick_leave_available}</div>
+                            <div className="stat-card-label">Sick Leave Available</div>
+                            <div className="progress-custom">
+                                <div className="progress-bar progress-bar-warning" style={{ width: `${(allocation.sick_leave_available / allocation.sick_leave_total) * 100}%` }}></div>
+                            </div>
+                            <small style={{ color: '#94a3b8', marginTop: '0.5rem', display: 'block' }}>of {allocation.sick_leave_total} days</small>
+                        </div>
+                    </div>
+                    <div className="col-md-4">
+                        <div className="glass-card stat-card glass-card-primary">
+                            <div className="stat-card-icon bg-primary-glow"><i className="bi bi-hourglass-split"></i></div>
+                            <div className="stat-card-value">{requests.filter(r => r.status === 'PENDING').length}</div>
+                            <div className="stat-card-label">Pending Requests</div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-        .page-tab {
-          padding: 0.5rem 1rem;
-          background: transparent;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: #94a3b8;
-          font-size: 0.85rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
+            {/* Leave Application Form */}
+            {showForm && (
+                <div className="glass-card p-4 mb-4 animate-slide-up">
+                    <h5 className="card-title mb-4"><i className="bi bi-calendar-plus me-2"></i>New Leave Request</h5>
+                    <form onSubmit={handleSubmit}>
+                        <div className="row g-3">
+                            <div className="col-md-4">
+                                <label className="form-label-glass">Leave Type</label>
+                                <select className="glass-select w-100" value={formData.time_off_type} onChange={(e) => setFormData({ ...formData, time_off_type: e.target.value })}>
+                                    <option value="PAID">Paid Leave</option>
+                                    <option value="SICK">Sick Leave</option>
+                                    <option value="UNPAID">Unpaid Leave</option>
+                                </select>
+                            </div>
+                            <div className="col-md-4">
+                                <label className="form-label-glass">Start Date</label>
+                                <input type="date" className="glass-input" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} required />
+                            </div>
+                            <div className="col-md-4">
+                                <label className="form-label-glass">End Date</label>
+                                <input type="date" className="glass-input" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} required />
+                            </div>
+                            <div className="col-12">
+                                <label className="form-label-glass">Reason</label>
+                                <textarea className="glass-input" rows="3" placeholder="Enter reason for leave..." value={formData.reason} onChange={(e) => setFormData({ ...formData, reason: e.target.value })} required></textarea>
+                            </div>
+                            <div className="col-12">
+                                <button type="submit" className="glass-btn glass-btn-primary" disabled={submitting}>
+                                    {submitting ? <><span className="spinner-border spinner-border-sm me-2"></span>Submitting...</> : <><i className="bi bi-send me-2"></i>Submit Request</>}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            )}
 
-        .page-tab:hover {
-          background: rgba(255, 255, 255, 0.05);
-        }
+            {/* Leave History */}
+            <div className="glass-card">
+                <div className="card-header-custom">
+                    <h5 className="mb-0"><i className="bi bi-clock-history me-2"></i>Leave History</h5>
+                </div>
+                {loading ? (
+                    <div className="text-center py-5"><div className="spinner-border text-primary"></div></div>
+                ) : requests.length === 0 ? (
+                    <div className="empty-state"><i className="bi bi-calendar-x"></i><h5>No leave requests</h5><p>You haven't submitted any leave requests yet</p></div>
+                ) : (
+                    <div className="glass-table">
+                        <table>
+                            <thead><tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th></tr></thead>
+                            <tbody>
+                                {requests.map((request, index) => (
+                                    <tr key={index}>
+                                        <td><span className={`leave-type type-${request.time_off_type?.toLowerCase()}`}>{request.time_off_type}</span></td>
+                                        <td>{new Date(request.start_date).toLocaleDateString()}</td>
+                                        <td>{new Date(request.end_date).toLocaleDateString()}</td>
+                                        <td><strong>{request.total_days}</strong></td>
+                                        <td className="reason-cell">{request.reason}</td>
+                                        <td>{getStatusBadge(request.status)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
 
-        .page-tab.active {
-          background: rgba(139, 92, 246, 0.2);
-          border-color: #8b5cf6;
-          color: #a78bfa;
-        }
-
-        .header-row {
-          display: flex;
-          gap: 1rem;
-          margin-bottom: 1rem;
-          align-items: center;
-        }
-
-        .btn-new {
-          padding: 0.5rem 1.25rem;
-          background: #8b5cf6;
-          border: none;
-          border-radius: 4px;
-          color: white;
-          font-weight: 500;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-
-        .btn-new:hover {
-          background: #7c3aed;
-        }
-
-        .search-box {
-          flex: 1;
-          max-width: 300px;
-        }
-
-        .search-box input {
-          width: 100%;
-          padding: 0.5rem 1rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 4px;
-          color: white;
-        }
-
-        .search-box input::placeholder {
-          color: #64748b;
-        }
-
-        .alert-box {
-          padding: 0.75rem 1rem;
-          margin-bottom: 1rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .alert-box.alert-success {
-          background: rgba(16, 185, 129, 0.2);
-          border: 1px solid rgba(16, 185, 129, 0.5);
-          color: #34d399;
-        }
-
-        .alert-box.alert-danger {
-          background: rgba(239, 68, 68, 0.2);
-          border: 1px solid rgba(239, 68, 68, 0.5);
-          color: #f87171;
-        }
-
-        .alert-box button {
-          background: none;
-          border: none;
-          color: inherit;
-          cursor: pointer;
-          font-size: 1.25rem;
-        }
-
-        .balance-cards {
-          display: flex;
-          gap: 2rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .balance-card {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .balance-type {
-          font-size: 0.85rem;
-          font-weight: 500;
-        }
-
-        .balance-type.paid {
-          color: #f472b6;
-        }
-
-        .balance-type.sick {
-          color: #60a5fa;
-        }
-
-        .balance-value {
-          font-size: 0.8rem;
-          color: #64748b;
-        }
-
-        .requests-table-wrapper {
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          overflow-x: auto;
-        }
-
-        .requests-table {
-          width: 100%;
-          border-collapse: collapse;
-          min-width: 600px;
-        }
-
-        .requests-table th,
-        .requests-table td {
-          padding: 0.75rem 1rem;
-          text-align: left;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .requests-table th {
-          background: rgba(255, 255, 255, 0.05);
-          font-weight: 500;
-          font-size: 0.85rem;
-          color: #94a3b8;
-        }
-
-        .requests-table td {
-          font-size: 0.9rem;
-          color: white;
-        }
-
-        .requests-table tbody tr:hover {
-          background: rgba(255, 255, 255, 0.03);
-        }
-
-        .type-cell {
-          color: #60a5fa;
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .btn-reject, .btn-approve {
-          width: 24px;
-          height: 24px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        }
-
-        .btn-reject {
-          background: #ef4444;
-        }
-
-        .btn-approve {
-          background: #10b981;
-        }
-
-        .btn-reject:disabled, .btn-approve:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .status-badge {
-          padding: 0.25rem 0.75rem;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          font-weight: 500;
-        }
-
-        .status-pending {
-          background: rgba(245, 158, 11, 0.2);
-          color: #fbbf24;
-        }
-
-        .status-approved {
-          background: rgba(16, 185, 129, 0.2);
-          color: #34d399;
-        }
-
-        .status-rejected {
-          background: rgba(239, 68, 68, 0.2);
-          color: #f87171;
-        }
-
-        .loading, .no-data {
-          text-align: center;
-          padding: 2rem;
-          color: #64748b;
-        }
-
-        /* Modal */
-        .modal-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.7);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-
-        .modal-content {
-          background: #1e293b;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          padding: 1.5rem;
-          width: 100%;
-          max-width: 400px;
-        }
-
-        .modal-content h3 {
-          margin: 0 0 1.5rem;
-          color: white;
-          font-size: 1.1rem;
-        }
-
-        .form-group {
-          margin-bottom: 1rem;
-        }
-
-        .form-group label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-size: 0.85rem;
-          color: #94a3b8;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-          width: 100%;
-          padding: 0.5rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 4px;
-          color: white;
-        }
-
-        .form-group textarea {
-          resize: vertical;
-        }
-
-        .form-actions {
-          display: flex;
-          gap: 0.5rem;
-          justify-content: flex-end;
-          margin-top: 1.5rem;
-        }
-
-        .form-actions button {
-          padding: 0.5rem 1rem;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 0.9rem;
-        }
-
-        .form-actions button:first-child {
-          background: transparent;
-          color: #94a3b8;
-        }
-
-        .form-actions .btn-submit {
-          background: #8b5cf6;
-          border-color: #8b5cf6;
-          color: white;
-        }
-
-        .form-actions .btn-submit:disabled {
-          opacity: 0.5;
-        }
-
-        @media (max-width: 640px) {
-          .balance-cards {
-            flex-direction: column;
-            gap: 1rem;
-          }
-        }
+            <style jsx>{`
+        .leave-page { animation: fadeIn 0.4s ease-out; }
+        .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+        .page-title { color: white; font-size: 1.75rem; margin-bottom: 0.25rem; }
+        .page-subtitle { color: #94a3b8; margin-bottom: 0; }
+        .alert-glass { display: flex; align-items: center; padding: 0.875rem 1rem; border-radius: 12px; font-size: 0.9rem; position: relative; }
+        .alert-glass.alert-success { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+        .alert-glass.alert-danger { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+        .alert-close { position: absolute; right: 0.75rem; background: none; border: none; color: inherit; cursor: pointer; }
+        .stat-card-icon { position: absolute; right: 1rem; top: 1rem; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+        .bg-primary-glow { background: linear-gradient(135deg, rgba(37,99,235,0.3), rgba(37,99,235,0.1)); color: #60a5fa; }
+        .bg-success-glow { background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(16,185,129,0.1)); color: #34d399; }
+        .bg-warning-glow { background: linear-gradient(135deg, rgba(245,158,11,0.3), rgba(245,158,11,0.1)); color: #fbbf24; }
+        .stat-card-value { font-size: 2rem; font-weight: 700; color: white; }
+        .stat-card-label { font-size: 0.875rem; color: #94a3b8; margin-bottom: 1rem; }
+        .card-title { color: white; display: flex; align-items: center; }
+        .form-label-glass { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #cbd5e1; }
+        .glass-select { padding: 0.75rem 2.5rem 0.75rem 1rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; color: white; font-size: 1rem; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; }
+        .glass-select option { background: #1e293b; }
+        textarea.glass-input { resize: vertical; min-height: 100px; }
+        .card-header-custom { padding: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .card-header-custom h5 { color: white; display: flex; align-items: center; }
+        .empty-state { text-align: center; padding: 3rem; color: #64748b; }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        .empty-state h5 { color: #94a3b8; }
+        .leave-type { padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .leave-type.type-paid { background: rgba(16,185,129,0.15); color: #34d399; }
+        .leave-type.type-sick { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .leave-type.type-unpaid { background: rgba(100,116,139,0.15); color: #94a3b8; }
+        .reason-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
-    </div>
-  )
+        </div>
+    )
 }
 
 export default Leave

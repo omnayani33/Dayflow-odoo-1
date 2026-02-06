@@ -24,8 +24,8 @@ function CompanySignup() {
     setError('')
 
     // Validation
-    if (!formData.company_name || !formData.first_name || !formData.last_name || 
-        !formData.email || !formData.phone || !formData.password) {
+    if (!formData.company_name || !formData.first_name || !formData.last_name ||
+      !formData.email || !formData.phone || !formData.password) {
       setError('Please fill in all fields')
       return
     }
@@ -67,16 +67,29 @@ function CompanySignup() {
         navigate('/dashboard', { replace: true })
       } else {
         // Redirect to login
-        navigate('/login', { 
+        navigate('/login', {
           state: { message: 'Company created successfully! Please sign in.' }
         })
       }
     } catch (err) {
       console.error('Signup error:', err)
-      
-      const errorMessage = err.response?.data?.message 
-        || err.response?.data?.error 
-        || 'Signup failed. Please try again.'
+
+      let errorMessage = 'Signup failed. Please try again.'
+
+      if (err.response?.data) {
+        const data = err.response.data
+        if (data.company_name) errorMessage = data.company_name[0]
+        else if (data.email) errorMessage = data.email[0]
+        else if (data.password) errorMessage = data.password[0]
+        else if (data.phone) errorMessage = data.phone[0]
+        else if (data.message) errorMessage = data.message
+        else if (data.error) errorMessage = data.error
+        else {
+          // Fallback for other validation errors
+          errorMessage = Object.values(data).flat().join(', ')
+        }
+      }
+
       setError(errorMessage)
     } finally {
       setLoading(false)
@@ -224,8 +237,8 @@ function CompanySignup() {
               </div>
             </div>
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn btn-primary w-100 py-2"
               disabled={loading}
             >

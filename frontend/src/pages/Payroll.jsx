@@ -66,10 +66,17 @@ function Payroll() {
           <h1 className="page-title">Payroll</h1>
           <p className="page-subtitle">View your salary details and payslips</p>
         </div>
-        <button className="glass-btn">
-          <i className="bi bi-download me-2"></i>
-          Download Payslip
-        </button>
+        <div className="d-flex gap-2">
+          {isAdmin && (
+            <button className="glass-btn glass-btn-primary" onClick={() => alert('Edit Salary Structure - Feature coming implementation')}>
+              <i className="bi bi-pencil me-2"></i>Edit Structure
+            </button>
+          )}
+          <button className="glass-btn">
+            <i className="bi bi-download me-2"></i>
+            Download Payslip
+          </button>
+        </div>
       </div>
 
       {/* Payslip Card */}
