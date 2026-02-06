@@ -77,7 +77,7 @@ export const authUtils = {
   // Validate auth state
   validateAuth: () => {
     const auth = authUtils.getAuth()
-    
+
     // Check if all required fields exist
     if (!auth.token || !auth.role || !auth.email) {
       return false

@@ -1,0 +1,173 @@
+/* Card Component Styles */
+
+.hrms-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    overflow: hidden;
+}
+
+.hrms-card-hover:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.hrms-card-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+    background-color: var(--surface);
+}
+
+.hrms-card-body {
+    padding: var(--spacing-lg);
+}
+
+.hrms-card-footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--border-light);
+    background-color: var(--gray-50);
+}
+
+.hrms-card-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.hrms-card-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: 0;
+}
+
+/* Stat Card Styles */
+
+.stat-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary-600);
+}
+
+.stat-card-primary::before {
+    background: var(--primary-600);
+}
+
+.stat-card-success::before {
+    background: var(--success-600);
+}
+
+.stat-card-warning::before {
+    background: var(--warning-600);
+}
+
+.stat-card-danger::before {
+    background: var(--danger-600);
+}
+
+.stat-card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.stat-card-info {
+    flex: 1;
+}
+
+.stat-card-label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-card-value {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+    line-height: 1;
+}
+
+.stat-card-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.stat-card-trend.trend-up {
+    color: var(--success-600);
+}
+
+.stat-card-trend.trend-down {
+    color: var(--danger-600);
+}
+
+.stat-card-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    background: var(--primary-50);
+    color: var(--primary-600);
+    font-size: 28px;
+}
+
+.stat-card-primary .stat-card-icon {
+    background: var(--primary-50);
+    color: var(--primary-600);
+}
+
+.stat-card-success .stat-card-icon {
+    background: var(--success-50);
+    color: var(--success-600);
+}
+
+.stat-card-warning .stat-card-icon {
+    background: var(--warning-50);
+    color: var(--warning-600);
+}
+
+.stat-card-danger .stat-card-icon {
+    background: var(--danger-50);
+    color: var(--danger-600);
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+
+    .hrms-card-body,
+    .hrms-card-header,
+    .hrms-card-footer {
+        padding: var(--spacing-md);
+    }
+
+    .stat-card-value {
+        font-size: var(--font-size-2xl);
+    }
+
+    .stat-card-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 24px;
+    }
+}

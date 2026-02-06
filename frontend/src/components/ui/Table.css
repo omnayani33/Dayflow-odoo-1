@@ -1,0 +1,206 @@
+/* Table Component Styles */
+
+.hrms-table-container {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    overflow-x: auto;
+}
+
+.hrms-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--font-size-sm);
+}
+
+/* Table Head */
+
+.hrms-table-head {
+    background-color: var(--gray-50);
+    border-bottom: 2px solid var(--border);
+}
+
+.hrms-table-header {
+    padding: var(--spacing-md) var(--spacing-lg);
+    text-align: left;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.hrms-table-header.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color var(--transition-fast);
+}
+
+.hrms-table-header.sortable:hover {
+    background-color: var(--gray-100);
+}
+
+.th-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.sort-icon {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+}
+
+.hrms-table-header.sorted-asc .sort-icon,
+.hrms-table-header.sorted-desc .sort-icon {
+    color: var(--primary-600);
+}
+
+/* Table Body */
+
+.hrms-table-body .hrms-table-row {
+    border-bottom: 1px solid var(--border-light);
+    transition: background-color var(--transition-fast);
+}
+
+.hrms-table-body .hrms-table-row:last-child {
+    border-bottom: none;
+}
+
+.table-hover .hrms-table-body .hrms-table-row:hover {
+    background-color: var(--gray-50);
+}
+
+.table-striped .hrms-table-body .hrms-table-row:nth-child(even) {
+    background-color: var(--gray-50);
+}
+
+.table-bordered .hrms-table {
+    border: 1px solid var(--border);
+}
+
+.table-bordered .hrms-table-header,
+.table-bordered .hrms-table-cell {
+    border: 1px solid var(--border-light);
+}
+
+/* Table Cell */
+
+.hrms-table-cell {
+    padding: var(--spacing-md) var(--spacing-lg);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+/* Empty State */
+
+.table-empty-state {
+    padding: var(--spacing-3xl) var(--spacing-xl);
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: var(--text-tertiary);
+    margin-bottom: var(--spacing-lg);
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-description {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-lg);
+}
+
+.empty-action {
+    margin-top: var(--spacing-lg);
+}
+
+/* Loading State */
+
+.table-loading {
+    padding: var(--spacing-lg);
+}
+
+.loading-row {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.loading-cell {
+    flex: 1;
+}
+
+.skeleton {
+    height: 20px;
+    background: linear-gradient(90deg,
+            var(--gray-100) 0%,
+            var(--gray-200) 50%,
+            var(--gray-100) 100%);
+    background-size: 200% 100%;
+    border-radius: var(--radius-sm);
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+
+    .hrms-table-header,
+    .hrms-table-cell {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: var(--font-size-xs);
+    }
+
+    .hrms-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .hrms-table {
+        min-width: 600px;
+    }
+}
+
+/* Table Actions Cell */
+
+.table-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+/* Table Cell Alignments */
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+.text-left {
+    text-align: left !important;
+}
