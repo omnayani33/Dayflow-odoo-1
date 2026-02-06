@@ -9,7 +9,7 @@ services:
       pip install -r requirements.txt
       python manage.py collectstatic --no-input
       python manage.py migrate
-    startCommand: gunicorn dayflow.wsgi:application
+    startCommand: gunicorn --chdir backend dayflow.wsgi:application
     envVars:
       - key: DEBUG
         value: "False"
