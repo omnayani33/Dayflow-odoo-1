@@ -11,6 +11,8 @@ services:
       python manage.py migrate
     startCommand: gunicorn --chdir backend dayflow.wsgi:application
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
