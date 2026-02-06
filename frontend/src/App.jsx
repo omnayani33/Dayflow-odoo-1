@@ -18,6 +18,7 @@ import Approvals from './pages/Approvals'
 import Payroll from './pages/Payroll'
 import Reports from './pages/Reports'
 import CreateEmployee from './pages/CreateEmployee'
+import AllEmployees from './pages/AllEmployees'
 
 // Route Guards
 const ProtectedRoute = ({ children }) => {
@@ -111,6 +112,11 @@ function App() {
         <Route path="reports" element={
           <AdminRoute>
             <Reports />
+          </AdminRoute>
+        } />
+        <Route path="employees" element={
+          <AdminRoute>
+            <AllEmployees />
           </AdminRoute>
         } />
         <Route path="create-employee" element={

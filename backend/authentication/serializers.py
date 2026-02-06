@@ -77,6 +77,8 @@ class EmployeeCreateSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     role = serializers.ChoiceField(choices=['HR', 'EMPLOYEE'], default='EMPLOYEE')
     year_of_joining = serializers.IntegerField(default=datetime.now().year)
+    department = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    job_title = serializers.CharField(max_length=100, required=False, allow_blank=True)
     
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -110,6 +112,14 @@ class EmployeeCreateSerializer(serializers.Serializer):
             user.year_of_joining
         )
         user.save()
+        
+        # Create profile with job details
+        from .models import EmployeeProfile
+        EmployeeProfile.objects.create(
+            user=user,
+            department=validated_data.get('department', ''),
+            job_title=validated_data.get('job_title', '')
+        )
         
         return {'user': user, 'temp_password': temp_password}
 

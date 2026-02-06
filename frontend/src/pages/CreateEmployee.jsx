@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authAPI } from '../api/endpoints'
 import Alert from '../components/Alert'
@@ -9,6 +9,8 @@ function CreateEmployee() {
         last_name: '',
         email: '',
         phone: '',
+        department: '',
+        job_title: '',
         role: 'EMPLOYEE'
     })
     const [employees, setEmployees] = useState([])
@@ -29,6 +31,7 @@ function CreateEmployee() {
             setEmployees(response.data)
         } catch (err) {
             console.error('Failed to fetch employees', err)
+            setMessage({ type: 'danger', text: 'Failed to load employee directory' })
         } finally {
             setFetching(false)
         }
@@ -48,10 +51,21 @@ function CreateEmployee() {
             const response = await authAPI.createEmployee(formData)
             setCreatedUser(response.data)
             setMessage({ type: 'success', text: 'Employee created successfully!' })
-            setFormData({ first_name: '', last_name: '', email: '', phone: '', role: 'EMPLOYEE' })
+            setFormData({ first_name: '', last_name: '', email: '', phone: '', department: '', job_title: '', role: 'EMPLOYEE' })
             fetchEmployees() // Refresh list
         } catch (err) {
-            const errorMessage = err.response?.data?.email?.[0] || err.response?.data?.message || 'Failed to create employee'
+            console.error('Create error:', err)
+            let errorMessage = 'Failed to create employee'
+            if (err.response?.data) {
+                const data = err.response.data
+                if (data.message) {
+                    errorMessage = data.message
+                } else if (typeof data === 'object') {
+                    // Collect first error from any field
+                    const firstError = Object.values(data).flat()[0]
+                    if (firstError) errorMessage = firstError
+                }
+            }
             setMessage({ type: 'danger', text: errorMessage })
         } finally {
             setLoading(false)
@@ -88,19 +102,19 @@ function CreateEmployee() {
                     <div className="user-details">
                         <div className="detail-row">
                             <span className="label">Name:</span>
-                            <span className="value">{createdUser.full_name}</span>
+                            <span className="value">{createdUser.employee?.full_name}</span>
                         </div>
                         <div className="detail-row">
                             <span className="label">Employee ID:</span>
-                            <span className="value highlight">{createdUser.employee_id}</span>
+                            <span className="value highlight">{createdUser.employee?.employee_id}</span>
                         </div>
                         <div className="detail-row">
                             <span className="label">Email:</span>
-                            <span className="value">{createdUser.email}</span>
+                            <span className="value">{createdUser.employee?.email}</span>
                         </div>
                         <div className="detail-row">
                             <span className="label">Temporary Password:</span>
-                            <span className="value highlight">{createdUser.temp_password}</span>
+                            <span className="value highlight">{createdUser.temporary_password}</span>
                         </div>
                     </div>
                     <p className="note mt-3"><i className="bi bi-info-circle me-2"></i>Share these credentials with the employee. They will be required to change password on first login.</p>
@@ -126,6 +140,21 @@ function CreateEmployee() {
                         <div className="col-md-6">
                             <label className="form-label-glass">Phone</label>
                             <input type="text" className="glass-input" name="phone" value={formData.phone} onChange={handleChange} placeholder="Enter phone number" />
+                        </div>
+                        <div className="col-md-6">
+                            <label className="form-label-glass">Department</label>
+                            <select className="glass-select w-100" name="department" value={formData.department} onChange={handleChange}>
+                                <option value="">Select Department</option>
+                                <option value="IT">IT & Engineering</option>
+                                <option value="HR">Human Resources</option>
+                                <option value="Sales">Sales & Marketing</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Operations">Operations</option>
+                            </select>
+                        </div>
+                        <div className="col-md-6">
+                            <label className="form-label-glass">Job Title</label>
+                            <input type="text" className="glass-input" name="job_title" value={formData.job_title} onChange={handleChange} placeholder="e.g. Software Engineer" />
                         </div>
                         <div className="col-md-6">
                             <label className="form-label-glass">Role</label>
@@ -154,6 +183,8 @@ function CreateEmployee() {
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Role</th>
+                                <th>Department</th>
+                                <th>Job Title</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -173,6 +204,8 @@ function CreateEmployee() {
                                         <td>{emp.full_name}</td>
                                         <td>{emp.email}</td>
                                         <td><span className={`badge ${emp.role === 'ADMIN' ? 'bg-primary' : emp.role === 'HR' ? 'bg-info' : 'bg-secondary'} bg-opacity-25 text-${emp.role === 'ADMIN' ? 'primary' : emp.role === 'HR' ? 'info' : 'light'}`}>{emp.role}</span></td>
+                                        <td>{emp.department || '-'}</td>
+                                        <td>{emp.job_title || '-'}</td>
                                         <td>
                                             {emp.is_active ?
                                                 <span className="status-badge status-badge-success">Active</span> :

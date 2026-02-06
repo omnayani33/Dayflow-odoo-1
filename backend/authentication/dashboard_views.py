@@ -486,6 +486,7 @@ class EmployeeListView(APIView):
         data = []
         for emp in employees:
             data.append({
+                'id': emp.id,
                 'employee_id': emp.employee_id,
                 'full_name': emp.get_full_name(),
                 'email': emp.email,

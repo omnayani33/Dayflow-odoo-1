@@ -6,6 +6,7 @@ from .views import (
     ChangePasswordView,
     CurrentUserView
 )
+from .delete_views import EmployeeDeleteView
 from .dashboard_views import (
     MyProfileView,
     UpdateProfileView,
@@ -53,6 +54,7 @@ urlpatterns = [
     # Employee management (admin/HR only)
     path('employee/create', EmployeeCreateView.as_view(), name='employee-create'),
     path('employee/all', EmployeeListView.as_view(), name='employee-list'),
+    path('employee/<int:pk>/delete', EmployeeDeleteView.as_view(), name='employee-delete'),
     
     # Authentication
     path('login', LoginView.as_view(), name='login'),

@@ -17,6 +17,9 @@ export const authAPI = {
   // Get all employees (Admin/HR only)
   getEmployees: () => api.get('/auth/employee/all'),
 
+  // Delete employee (Admin/HR only)
+  deleteEmployee: (id) => api.delete(`/auth/employee/${id}/delete`),
+
   // Change password
   changePassword: (data) => api.post('/auth/change-password', data),
 
