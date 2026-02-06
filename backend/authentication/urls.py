@@ -46,6 +46,13 @@ from .advanced_analytics_views import (
     PerformanceScoreView,
     GraphDataView
 )
+from .profile_management_views import (
+    AvatarUploadView,
+    DocumentListView,
+    DocumentUploadView,
+    DocumentDownloadView,
+    DocumentDeleteView
+)
 
 urlpatterns = [
     # Company registration (creates first admin account)
@@ -66,6 +73,11 @@ urlpatterns = [
     # Profile Management
     path('profile/me', MyProfileView.as_view(), name='my-profile'),
     path('profile/update', UpdateProfileView.as_view(), name='update-profile'),
+    path('profile/avatar', AvatarUploadView.as_view(), name='avatar-upload'),
+    path('profile/documents', DocumentListView.as_view(), name='document-list'),
+    path('profile/documents', DocumentUploadView.as_view(), name='document-upload'),
+    path('profile/documents/<int:pk>/download', DocumentDownloadView.as_view(), name='document-download'),
+    path('profile/documents/<int:pk>', DocumentDeleteView.as_view(), name='document-delete'),
     
     # Dashboard
     path('dashboard/employee', EmployeeDashboardView.as_view(), name='employee-dashboard'),

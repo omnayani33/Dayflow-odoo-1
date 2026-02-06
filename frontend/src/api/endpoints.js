@@ -34,6 +34,21 @@ export const profileAPI = {
 
   // Update profile
   updateProfile: (data) => api.put('/auth/profile/update', data),
+
+  // Upload avatar
+  uploadAvatar: (formData) => api.post('/auth/profile/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+
+  // Document management
+  getMyDocuments: () => api.get('/auth/profile/documents'),
+  uploadDocument: (formData) => api.post('/auth/profile/documents', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadDocument: (id) => api.get(`/auth/profile/documents/${id}/download`, {
+    responseType: 'blob'
+  }),
+  deleteDocument: (id) => api.delete(`/auth/profile/documents/${id}`),
 }
 
 // Dashboard APIs
@@ -47,11 +62,17 @@ export const dashboardAPI = {
 
 // Attendance APIs
 export const attendanceAPI = {
-  // Check in
-  checkIn: () => api.post('/auth/attendance/check', { action: 'check_in' }),
+  // Check in with location
+  checkIn: (locationData = {}) => api.post('/auth/attendance/check', {
+    action: 'check_in',
+    ...locationData
+  }),
 
-  // Check out
-  checkOut: () => api.post('/auth/attendance/check', { action: 'check_out' }),
+  // Check out with location
+  checkOut: (locationData = {}) => api.post('/auth/attendance/check', {
+    action: 'check_out',
+    ...locationData
+  }),
 
   // Get my attendance records
   getMyAttendance: (month, year) => api.get(`/auth/attendance/my?month=${month}&year=${year}`),
@@ -89,4 +110,16 @@ export const reportsAPI = {
   getAttendanceReport: (month, year) => api.get(`/auth/reports/attendance?month=${month}&year=${year}`),
   getLeaveReport: (year) => api.get(`/auth/reports/leave?year=${year}`),
   getPayrollReport: (month, year) => api.get(`/auth/reports/payroll?month=${month}&year=${year}`),
+  downloadAttendanceCSV: (month, year) => api.get(`/auth/reports/attendance/csv?month=${month}&year=${year}`, { responseType: 'blob' }),
+  downloadLeaveCSV: (year) => api.get(`/auth/reports/leave/csv?year=${year}`, { responseType: 'blob' }),
+  downloadPayrollCSV: (month, year) => api.get(`/auth/reports/payroll/csv?month=${month}&year=${year}`, { responseType: 'blob' }),
+}
+
+// Notification APIs
+export const notificationsAPI = {
+  getMyNotifications: (params) => api.get('/auth/notifications', { params }),
+  markAsRead: (id) => api.patch(`/auth/notifications/${id}/read`),
+  markAllAsRead: () => api.post('/auth/notifications/read-all'),
+  deleteNotification: (id) => api.delete(`/auth/notifications/${id}/delete`),
+  clearAll: () => api.delete('/auth/notifications/clear'),
 }

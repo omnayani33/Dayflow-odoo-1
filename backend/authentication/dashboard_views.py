@@ -224,6 +224,11 @@ class CheckInOutView(APIView):
         action = request.data.get('action')  # 'check_in' or 'check_out'
         today = date.today()
         
+        # Get location data from request
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+        location_name = request.data.get('location', '')
+        
         attendance, created = Attendance.objects.get_or_create(
             user=request.user,
             date=today
@@ -237,10 +242,22 @@ class CheckInOutView(APIView):
                 )
             attendance.check_in = datetime.now().time()
             attendance.status = 'PRESENT'
+            
+            # Store check-in location
+            if latitude and longitude:
+                attendance.check_in_latitude = latitude
+                attendance.check_in_longitude = longitude
+                attendance.check_in_location = location_name
+            
             attendance.save()
             return Response({
                 'message': 'Checked in successfully',
-                'check_in': str(attendance.check_in)
+                'check_in': str(attendance.check_in),
+                'location': {
+                    'latitude': str(attendance.check_in_latitude) if attendance.check_in_latitude else None,
+                    'longitude': str(attendance.check_in_longitude) if attendance.check_in_longitude else None,
+                    'name': attendance.check_in_location
+                }
             })
         
         elif action == 'check_out':
@@ -255,13 +272,25 @@ class CheckInOutView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             attendance.check_out = datetime.now().time()
+            
+            # Store check-out location
+            if latitude and longitude:
+                attendance.check_out_latitude = latitude
+                attendance.check_out_longitude = longitude
+                attendance.check_out_location = location_name
+            
             attendance.calculate_work_hours()
             attendance.save()
             return Response({
                 'message': 'Checked out successfully',
                 'check_out': str(attendance.check_out),
                 'work_hours': float(attendance.work_hours),
-                'extra_hours': float(attendance.extra_hours)
+                'extra_hours': float(attendance.extra_hours),
+                'location': {
+                    'latitude': str(attendance.check_out_latitude) if attendance.check_out_latitude else None,
+                    'longitude': str(attendance.check_out_longitude) if attendance.check_out_longitude else None,
+                    'name': attendance.check_out_location
+                }
             })
         
         return Response(

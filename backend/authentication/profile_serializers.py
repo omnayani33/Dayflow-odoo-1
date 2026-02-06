@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import EmployeeProfile, Attendance, TimeOff, LeaveAllocation, Notification
+from .document_models import EmployeeDocument
 
 User = get_user_model()
 
@@ -11,11 +12,19 @@ class EmployeeProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
     full_name = serializers.CharField(source='user.get_full_name', read_only=True)
     role = serializers.CharField(source='user.role', read_only=True)
+    avatar = serializers.SerializerMethodField()
     
     class Meta:
         model = EmployeeProfile
         fields = '__all__'
         read_only_fields = ['user', 'created_at', 'updated_at']
+    
+    def get_avatar(self, obj):
+        """Get absolute URL for avatar"""
+        request = self.context.get('request')
+        if obj.avatar and request:
+            return request.build_absolute_uri(obj.avatar.url)
+        return None
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -179,3 +188,33 @@ class NotificationSerializer(serializers.ModelSerializer):
         else:
             weeks = int(seconds / 604800)
             return f"{weeks} week{'s' if weeks != 1 else ''} ago"
+
+
+class EmployeeDocumentSerializer(serializers.ModelSerializer):
+    """Serializer for employee documents"""
+    file_url = serializers.SerializerMethodField()
+    file_size = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = EmployeeDocument
+        fields = ['id', 'document_name', 'document_type', 'file_url', 
+                  'file_size', 'uploaded_at', 'updated_at']
+        read_only_fields = ['id', 'uploaded_at', 'updated_at']
+    
+    def get_file_url(self, obj):
+        """Get absolute URL for document file"""
+        request = self.context.get('request')
+        if obj.document_file and request:
+            return request.build_absolute_uri(obj.document_file.url)
+        return None
+    
+    def get_file_size(self, obj):
+        """Get file size in human-readable format"""
+        if obj.document_file:
+            size = obj.document_file.size
+            for unit in ['B', 'KB', 'MB', 'GB']:
+                if size < 1024.0:
+                    return f"{size:.1f} {unit}"
+                size /= 1024.0
+        return None
+

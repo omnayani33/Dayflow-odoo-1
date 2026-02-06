@@ -226,6 +226,15 @@ class Attendance(models.Model):
     date = models.DateField()
     check_in = models.TimeField(null=True, blank=True)
     check_out = models.TimeField(null=True, blank=True)
+    
+    # Location tracking
+    check_in_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    check_in_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    check_in_location = models.CharField(max_length=500, blank=True)
+    check_out_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    check_out_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    check_out_location = models.CharField(max_length=500, blank=True)
+    
     work_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     extra_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ABSENT')

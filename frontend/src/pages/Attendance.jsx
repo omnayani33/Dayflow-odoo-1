@@ -32,14 +32,77 @@ function Attendance() {
         }
     }
 
+    const getLocation = () => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Geolocation is not supported by your browser'))
+                return
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    resolve({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    })
+                },
+                (error) => {
+                    reject(error)
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            )
+        })
+    }
+
+    const reverseGeocode = async (lat, lon) => {
+        try {
+            // Using OpenStreetMap Nominatim for reverse geocoding (free, no API key needed)
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+            )
+            const data = await response.json()
+            return data.display_name || `${lat}, ${lon}`
+        } catch (error) {
+            console.error('Reverse geocoding failed:', error)
+            return `${lat}, ${lon}`
+        }
+    }
+
     const handleCheckIn = async () => {
         try {
             setActionLoading(true)
-            const response = await attendanceAPI.checkIn()
-            setMessage({ type: 'success', text: response.data.message || 'Checked in successfully!' })
+            setMessage({ type: 'info', text: 'Getting your location...' })
+
+            // Get user's location
+            const location = await getLocation()
+            const locationName = await reverseGeocode(location.latitude, location.longitude)
+
+            const response = await attendanceAPI.checkIn({
+                latitude: location.latitude,
+                longitude: location.longitude,
+                location: locationName
+            })
+
+            setMessage({
+                type: 'success',
+                text: `${response.data.message || 'Checked in successfully!'} Location: ${locationName}`
+            })
             fetchAttendance()
         } catch (err) {
-            setMessage({ type: 'danger', text: err.response?.data?.message || 'Check-in failed' })
+            if (err.code === 1) { // PERMISSION_DENIED
+                setMessage({ type: 'danger', text: 'Location permission denied. Please enable location access.' })
+            } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                setMessage({ type: 'danger', text: 'Location unavailable. Please check your GPS settings.' })
+            } else if (err.code === 3) { // TIMEOUT
+                setMessage({ type: 'danger', text: 'Location request timed out. Please try again.' })
+            } else {
+                setMessage({ type: 'danger', text: err.response?.data?.error || err.message || 'Check-in failed' })
+            }
         } finally {
             setActionLoading(false)
         }
@@ -48,11 +111,33 @@ function Attendance() {
     const handleCheckOut = async () => {
         try {
             setActionLoading(true)
-            const response = await attendanceAPI.checkOut()
-            setMessage({ type: 'success', text: response.data.message || 'Checked out successfully!' })
+            setMessage({ type: 'info', text: 'Getting your location...' })
+
+            // Get user's location
+            const location = await getLocation()
+            const locationName = await reverseGeocode(location.latitude, location.longitude)
+
+            const response = await attendanceAPI.checkOut({
+                latitude: location.latitude,
+                longitude: location.longitude,
+                location: locationName
+            })
+
+            setMessage({
+                type: 'success',
+                text: `${response.data.message || 'Checked out successfully!'} Location: ${locationName}`
+            })
             fetchAttendance()
         } catch (err) {
-            setMessage({ type: 'danger', text: err.response?.data?.message || 'Check-out failed' })
+            if (err.code === 1) { // PERMISSION_DENIED
+                setMessage({ type: 'danger', text: 'Location permission denied. Please enable location access.' })
+            } else if (err.code === 2) { // POSITION_UNAVAILABLE
+                setMessage({ type: 'danger', text: 'Location unavailable. Please check your GPS settings.' })
+            } else if (err.code === 3) { // TIMEOUT
+                setMessage({ type: 'danger', text: 'Location request timed out. Please try again.' })
+            } else {
+                setMessage({ type: 'danger', text: err.response?.data?.error || err.message || 'Check-out failed' })
+            }
         } finally {
             setActionLoading(false)
         }
@@ -108,19 +193,40 @@ function Attendance() {
 
                     <div className="checkin-actions">
                         {!todayStatus?.check_in ? (
-                            <button className="glass-btn glass-btn-success btn-lg" onClick={handleCheckIn} disabled={actionLoading}>
-                                {actionLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : <i className="bi bi-box-arrow-in-right me-2"></i>}
-                                Check In
-                            </button>
+                            <div className="action-container">
+                                <button className="glass-btn glass-btn-success btn-lg" onClick={handleCheckIn} disabled={actionLoading}>
+                                    {actionLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : <i className="bi bi-box-arrow-in-right me-2"></i>}
+                                    Check In
+                                </button>
+                                <p className="action-hint">
+                                    <i className="bi bi-info-circle me-1"></i>
+                                    You can check in once per day
+                                </p>
+                            </div>
                         ) : !todayStatus?.check_out ? (
-                            <button className="glass-btn glass-btn-danger btn-lg" onClick={handleCheckOut} disabled={actionLoading}>
-                                {actionLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : <i className="bi bi-box-arrow-right me-2"></i>}
-                                Check Out
-                            </button>
+                            <div className="action-container">
+                                <button className="glass-btn glass-btn-danger btn-lg" onClick={handleCheckOut} disabled={actionLoading}>
+                                    {actionLoading ? <span className="spinner-border spinner-border-sm me-2"></span> : <i className="bi bi-box-arrow-right me-2"></i>}
+                                    Check Out
+                                </button>
+                                <p className="action-hint">
+                                    <i className="bi bi-info-circle me-1"></i>
+                                    You can check out once per day
+                                </p>
+                            </div>
                         ) : (
-                            <div className="work-complete">
-                                <i className="bi bi-check-circle-fill text-success"></i>
-                                <span>Work day completed!</span>
+                            <div className="work-complete-container">
+                                <div className="work-complete">
+                                    <i className="bi bi-check-circle-fill"></i>
+                                    <div>
+                                        <div className="complete-title">Work day completed!</div>
+                                        <div className="complete-subtitle">You have checked in and out for today</div>
+                                    </div>
+                                </div>
+                                <p className="next-day-hint">
+                                    <i className="bi bi-calendar-check me-1"></i>
+                                    Next check-in available tomorrow
+                                </p>
                             </div>
                         )}
                     </div>
@@ -129,14 +235,41 @@ function Attendance() {
                         <div className="today-times">
                             {todayStatus.check_in && (
                                 <div className="time-block">
-                                    <span className="time-block-label">Check In</span>
-                                    <span className="time-block-value">{todayStatus.check_in}</span>
+                                    <i className="bi bi-box-arrow-in-right time-block-icon text-success"></i>
+                                    <div>
+                                        <span className="time-block-label">Checked In</span>
+                                        <span className="time-block-value">{todayStatus.check_in}</span>
+                                        {todayStatus.check_in_location && (
+                                            <span className="time-block-location">
+                                                <i className="bi bi-geo-alt-fill"></i>
+                                                {todayStatus.check_in_location.substring(0, 30)}...
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                             {todayStatus.check_out && (
                                 <div className="time-block">
-                                    <span className="time-block-label">Check Out</span>
-                                    <span className="time-block-value">{todayStatus.check_out}</span>
+                                    <i className="bi bi-box-arrow-right time-block-icon text-danger"></i>
+                                    <div>
+                                        <span className="time-block-label">Checked Out</span>
+                                        <span className="time-block-value">{todayStatus.check_out}</span>
+                                        {todayStatus.check_out_location && (
+                                            <span className="time-block-location">
+                                                <i className="bi bi-geo-alt-fill"></i>
+                                                {todayStatus.check_out_location.substring(0, 30)}...
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            {todayStatus.work_hours && (
+                                <div className="time-block">
+                                    <i className="bi bi-clock-history time-block-icon text-info"></i>
+                                    <div>
+                                        <span className="time-block-label">Total Hours</span>
+                                        <span className="time-block-value">{todayStatus.work_hours}h</span>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -174,14 +307,76 @@ function Attendance() {
                     <div className="glass-table">
                         <table>
                             <thead>
-                                <tr><th>Date</th><th>Check In</th><th>Check Out</th><th>Work Hours</th><th>Status</th></tr>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Check In</th>
+                                    <th>Check In Location</th>
+                                    <th>Check Out</th>
+                                    <th>Check Out Location</th>
+                                    <th>Work Hours</th>
+                                    <th>Status</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 {records.map((record, index) => (
                                     <tr key={index}>
-                                        <td><span className="date-cell">{new Date(record.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span></td>
+                                        <td>
+                                            <span className="date-cell">
+                                                {new Date(record.date).toLocaleDateString('en-US', {
+                                                    weekday: 'short',
+                                                    month: 'short',
+                                                    day: 'numeric'
+                                                })}
+                                            </span>
+                                        </td>
                                         <td>{record.check_in || '-'}</td>
+                                        <td>
+                                            {record.check_in_location ? (
+                                                <div className="location-cell">
+                                                    <i className="bi bi-geo-alt-fill me-1"></i>
+                                                    <span className="location-text" title={record.check_in_location}>
+                                                        {record.check_in_location.length > 40
+                                                            ? record.check_in_location.substring(0, 40) + '...'
+                                                            : record.check_in_location}
+                                                    </span>
+                                                    {record.check_in_latitude && record.check_in_longitude && (
+                                                        <a
+                                                            href={`https://www.google.com/maps?q=${record.check_in_latitude},${record.check_in_longitude}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="map-link"
+                                                            title="View on map"
+                                                        >
+                                                            <i className="bi bi-map"></i>
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            ) : '-'}
+                                        </td>
                                         <td>{record.check_out || '-'}</td>
+                                        <td>
+                                            {record.check_out_location ? (
+                                                <div className="location-cell">
+                                                    <i className="bi bi-geo-alt-fill me-1"></i>
+                                                    <span className="location-text" title={record.check_out_location}>
+                                                        {record.check_out_location.length > 40
+                                                            ? record.check_out_location.substring(0, 40) + '...'
+                                                            : record.check_out_location}
+                                                    </span>
+                                                    {record.check_out_latitude && record.check_out_longitude && (
+                                                        <a
+                                                            href={`https://www.google.com/maps?q=${record.check_out_latitude},${record.check_out_longitude}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="map-link"
+                                                            title="View on map"
+                                                        >
+                                                            <i className="bi bi-map"></i>
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            ) : '-'}
+                                        </td>
                                         <td>{record.work_hours ? `${record.work_hours}h` : '-'}</td>
                                         <td>{getStatusBadge(record.status)}</td>
                                     </tr>
@@ -199,6 +394,7 @@ function Attendance() {
         .alert-glass { display: flex; align-items: center; padding: 0.875rem 1rem; border-radius: 12px; font-size: 0.9rem; position: relative; }
         .alert-glass.alert-success { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
         .alert-glass.alert-danger { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+        .alert-glass.alert-info { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #60a5fa; }
         .alert-close { position: absolute; right: 0.75rem; background: none; border: none; color: inherit; cursor: pointer; opacity: 0.7; }
         .checkin-section { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 2rem; }
         .current-time-display { text-align: center; }
@@ -206,12 +402,22 @@ function Attendance() {
         .time-value { font-size: 3rem; font-weight: 700; color: white; line-height: 1; }
         .date-value { font-size: 0.9rem; color: #94a3b8; margin-top: 0.5rem; }
         .btn-lg { padding: 1rem 2rem; font-size: 1.1rem; }
-        .work-complete { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.5rem; background: rgba(16,185,129,0.15); border-radius: 12px; color: #34d399; font-weight: 500; }
-        .work-complete i { font-size: 1.5rem; }
-        .today-times { display: flex; gap: 2rem; }
-        .time-block { text-align: center; }
-        .time-block-label { display: block; font-size: 0.75rem; color: #64748b; text-transform: uppercase; }
+        .action-container { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .action-hint { margin: 0; font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: 0.25rem; }
+        .action-hint i { font-size: 0.9rem; }
+        .work-complete-container { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+        .work-complete { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.5rem; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); border-radius: 12px; color: #34d399; }
+        .work-complete i { font-size: 2rem; flex-shrink: 0; }
+        .complete-title { font-size: 1.1rem; font-weight: 600; }
+        .complete-subtitle { font-size: 0.85rem; color: #6ee7b7; margin-top: 0.25rem; }
+        .next-day-hint { margin: 0; font-size: 0.85rem; color: #64748b; display: flex; align-items: center; gap: 0.25rem; }
+        .today-times { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; }
+        .time-block { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; background: rgba(255,255,255,0.04); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
+        .time-block-icon { font-size: 1.5rem; flex-shrink: 0; }
+        .time-block-label { display: block; font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.25rem; }
         .time-block-value { display: block; font-size: 1.25rem; font-weight: 600; color: white; }
+        .time-block-location { display: block; font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.25rem; }
+        .time-block-location i { color: #3b82f6; font-size: 0.7rem; }
         .card-header-custom { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; gap: 1rem; }
         .card-header-custom h5 { color: white; display: flex; align-items: center; }
         .month-filter { display: flex; gap: 0.5rem; }
@@ -221,6 +427,12 @@ function Attendance() {
         .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
         .empty-state h5 { color: #94a3b8; margin-bottom: 0.5rem; }
         .date-cell { font-weight: 500; color: white; }
+        .location-cell { display: flex; align-items: center; gap: 0.5rem; color: #94a3b8; font-size: 0.85rem; max-width: 250px; }
+        .location-cell i.bi-geo-alt-fill { color: #3b82f6; flex-shrink: 0; }
+        .location-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .map-link { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: rgba(59, 130, 246, 0.2); border-radius: 6px; color: #3b82f6; text-decoration: none; transition: all 0.2s; flex-shrink: 0; }
+        .map-link:hover { background: rgba(59, 130, 246, 0.3); transform: scale(1.1); }
+        .map-link i { font-size: 0.75rem; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @media (max-width: 768px) { .checkin-section { flex-direction: column; text-align: center; } .time-value { font-size: 2.5rem; } }
       `}</style>
